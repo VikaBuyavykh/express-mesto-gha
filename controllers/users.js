@@ -31,7 +31,7 @@ const getUserById = async (req, res) => {
     const { name, about, avatar, _id } = user;
     return res.status(200).send({ name, about, avatar, _id });
   } catch (error) {
-    if (error.message === 'Такого пользователя не существует') {
+    if (error.message === 'Такого пользователя не существует' || error.name === 'CastError') {
       return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
     }
     return res.status(500).send({ message: 'Ошибка на стороне сервера' });
@@ -40,19 +40,15 @@ const getUserById = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    if ((req.body.name || req.body.about) && !req.body.avatar) {
-      const user = await User.findByIdAndUpdate(req.user._id, req.body, { new: true, runValidators: true, upsert: true });
-      if (user !== null) {
-        const { name, about, avatar, _id } = user;
-        return res.send({ name, about, avatar, _id });
-      } else {
-        throw new Error('Такого пользователя не существует');
-      }
+    const user = await User.findByIdAndUpdate(req.user._id, {name: req.body.name, about: req.body.about}, { new: true, runValidators: true });
+    if (user === null) {
+      throw new Error('Такого пользователя не существует');
     } else {
-    throw new Error('Запрос не валиден');
+      const { name, about, avatar, _id } = user;
+      return res.send({ name, about, avatar, _id });
     }
   } catch (error) {
-    if (error.message === 'Запрос не валиден') {
+    if (error.name === 'ValidationError') {
       return res.status(400).send({ message: 'Переданные данные некорректны' });
     }
     if (error.message === 'Такого пользователя не существует') {
@@ -64,19 +60,15 @@ const updateProfile = async (req, res) => {
 
 const updateAvatar = async (req, res) => {
   try {
-    if (!req.body.avatar || req.body.name || req.body.about) {
-      throw new Error('Запрос не валиден');
+    const user = await User.findByIdAndUpdate(req.user._id, {avatar: req.body.avatar}, { new: true, runValidators: true });
+    if (user !== null) {
+      const { name, about, avatar, _id } = user;
+      return res.send({ name, about, avatar, _id });
     } else {
-      const user = await User.findByIdAndUpdate(req.user._id, req.body, { new: true, runValidators: true, upsert: true });
-      if (user !== null) {
-        const { name, about, avatar, _id } = user;
-        return res.send({ name, about, avatar, _id });
-      } else {
-        throw new Error('Такого пользователя не существует');
-      }
+      throw new Error('Такого пользователя не существует');
     }
   } catch (error) {
-    if (error.message === 'Запрос не валиден') {
+    if (error.name === 'ValidationError') {
       return res.status(400).send({ message: 'Переданные данные некорректны' });
     }
     if (error.message === 'Такого пользователя не существует') {

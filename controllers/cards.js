@@ -3,7 +3,6 @@ const Card = require('../models/card');
 const createCard = async (req, res) => {
   try {
     const newCard = await new Card({name: req.body.name, link: req.body.link, owner: req.user._id});
-    await newCard.populate('owner');
     await newCard.save();
     const {likes, _id, name, link, owner, createdAt} = newCard;
     return res.status(201).send({likes, _id, name, link, owner, createdAt});
@@ -17,7 +16,6 @@ const createCard = async (req, res) => {
 
 const getCards = async (req, res) => {
   try {
-    const cards = await Card.find({}).populate(['owner', 'likes']);
     return res.send(cards);
   } catch (error) {
     return res.status(500).send({ message: 'Ошибка на стороне сервера' });
@@ -33,7 +31,7 @@ const deleteCard = async (req, res) => {
     }
     return res.send({Message: 'Пост удален'});
   } catch (error) {
-    if (error.message === 'Карточка не найдена') {
+    if (error.message === 'Карточка не найдена' || error.name === 'CastError') {
       return res.status(404).send({ message: 'Запрашиваемая карточка не найдена' });
     }
     return res.status(500).send({ message: 'Ошибка на стороне сервера' });
@@ -42,14 +40,14 @@ const deleteCard = async (req, res) => {
 
 const likeCard = async (req, res) => {
   try {
-    const likedCard = await Card.findByIdAndUpdate(req.params.cardId, { $addToSet: { likes: req.user._id } }, { new: true }).populate(['owner', 'likes']);
+    const likedCard = await Card.findByIdAndUpdate(req.params.cardId, { $addToSet: { likes: req.user._id } }, { new: true });
     if (likedCard === null) {
       throw new Error('Карточка не найдена');
     }
     const {likes, _id, name, link, owner, createdAt} = likedCard;
     return res.send({likes, _id, name, link, owner, createdAt});
   } catch (error) {
-    if (error.message === 'Карточка не найдена') {
+    if (error.message === 'Карточка не найдена' || error.name === 'CastError') {
       return res.status(404).send({ message: 'Запрашиваемая карточка не найдена' });
     }
     return res.status(500).send({ message: 'Ошибка на стороне сервера' });
@@ -58,14 +56,14 @@ const likeCard = async (req, res) => {
 
 const dislikeCard = async (req, res) => {
   try {
-    const dislikedCard = await Card.findByIdAndUpdate(req.params.cardId, { $pull: { likes: req.user._id } }, { new: true }).populate(['owner', 'likes']);
+    const dislikedCard = await Card.findByIdAndUpdate(req.params.cardId, { $pull: { likes: req.user._id } }, { new: true });
     if (dislikedCard === null) {
       throw new Error('Карточка не найдена');
     }
     const {likes, _id, name, link, owner, createdAt} = dislikedCard;
     return res.send({likes, _id, name, link, owner, createdAt});
   } catch (error) {
-    if (error.message === 'Карточка не найдена') {
+    if (error.message === 'Карточка не найдена' || error.name === 'CastError') {
       return res.status(404).send({ message: 'Запрашиваемая карточка не найдена' });
     }
     return res.status(500).send({ message: 'Ошибка на стороне сервера' });
