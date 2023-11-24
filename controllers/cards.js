@@ -1,6 +1,9 @@
 const Card = require('../models/card');
+const NotFoundError = require('../errors/not-found-err');
+const ForbiddenError = require('../errors/forbidden-err');
+const BadRequestError = require('../errors/bad-request-err');
 
-const createCard = async (req, res) => {
+const createCard = async (req, res, next) => {
   try {
     const newCard = await new Card({
       name: req.body.name, link: req.body.link, owner: req.user._id,
@@ -12,48 +15,49 @@ const createCard = async (req, res) => {
     return res.status(201).send({
       likes, _id, name, link, owner, createdAt,
     });
-  } catch (error) {
-    if (error.name === 'ValidationError') {
-      return res.status(400).send({ message: 'Ошибка валидации полей' });
+  } catch (err) {
+    if (err.name === 'ValidationError') {
+      return next(new BadRequestError('Ошибка валидации полей'));
     }
-    return res.status(500).send({ message: 'Ошибка на стороне сервера' });
+    return next(err);
   }
 };
 
-const getCards = async (req, res) => {
+const getCards = async (req, res, next) => {
   try {
     const cards = await Card.find({});
     return res.send(cards);
-  } catch (error) {
-    return res.status(500).send({ message: 'Ошибка на стороне сервера' });
+  } catch (err) {
+    return next(err);
   }
 };
 
-const deleteCard = async (req, res) => {
+const deleteCard = async (req, res, next) => {
   try {
     const { cardId } = req.params;
-    const deletedCard = await Card.findByIdAndDelete(cardId);
-    if (deletedCard === null) {
-      throw new Error('Карточка не найдена');
+    const card = await Card.findById(cardId);
+    if (card === null) {
+      throw new NotFoundError('Карточка не найдена');
     }
+    if (card.owner.toString() !== req.user._id) {
+      throw new ForbiddenError('У вас недостаточно прав, чтобы удалить пост');
+    }
+    await Card.findByIdAndDelete(cardId);
     return res.send({ Message: 'Пост удален' });
-  } catch (error) {
-    if (error.name === 'CastError') {
-      return res.status(400).send({ message: 'Переданы некорректные данные' });
+  } catch (err) {
+    if (err.name === 'CastError') {
+      return next(new BadRequestError('Переданы некорректные данные'));
     }
-    if (error.message === 'Карточка не найдена') {
-      return res.status(404).send({ message: 'Запрашиваемая карточка не найдена' });
-    }
-    return res.status(500).send({ message: 'Ошибка на стороне сервера' });
+    return next(err);
   }
 };
 
-const likeCard = async (req, res) => {
+const likeCard = async (req, res, next) => {
   try {
     const likedCard = await Card
       .findByIdAndUpdate(req.params.cardId, { $addToSet: { likes: req.user._id } }, { new: true });
     if (likedCard === null) {
-      throw new Error('Карточка не найдена');
+      throw new NotFoundError('Карточка не найдена');
     }
     const {
       likes, _id, name, link, owner, createdAt,
@@ -61,23 +65,20 @@ const likeCard = async (req, res) => {
     return res.send({
       likes, _id, name, link, owner, createdAt,
     });
-  } catch (error) {
-    if (error.name === 'CastError') {
-      return res.status(400).send({ message: 'Переданы некорректные данные' });
+  } catch (err) {
+    if (err.name === 'CastError') {
+      return next(new BadRequestError('Переданы некорректные данные'));
     }
-    if (error.message === 'Карточка не найдена') {
-      return res.status(404).send({ message: 'Запрашиваемая карточка не найдена' });
-    }
-    return res.status(500).send({ message: 'Ошибка на стороне сервера' });
+    return next(err);
   }
 };
 
-const dislikeCard = async (req, res) => {
+const dislikeCard = async (req, res, next) => {
   try {
     const dislikedCard = await Card
       .findByIdAndUpdate(req.params.cardId, { $pull: { likes: req.user._id } }, { new: true });
     if (dislikedCard === null) {
-      throw new Error('Карточка не найдена');
+      throw new NotFoundError('Карточка не найдена');
     }
     const {
       likes, _id, name, link, owner, createdAt,
@@ -85,14 +86,11 @@ const dislikeCard = async (req, res) => {
     return res.send({
       likes, _id, name, link, owner, createdAt,
     });
-  } catch (error) {
-    if (error.name === 'CastError') {
-      return res.status(400).send({ message: 'Переданы некорректные данные' });
+  } catch (err) {
+    if (err.name === 'CastError') {
+      return next(new BadRequestError('Переданы некорректные данные'));
     }
-    if (error.message === 'Карточка не найдена') {
-      return res.status(404).send({ message: 'Запрашиваемая карточка не найдена' });
-    }
-    return res.status(500).send({ message: 'Ошибка на стороне сервера' });
+    return next(err);
   }
 };
 
