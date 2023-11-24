@@ -15,7 +15,7 @@ cardRouter.delete('/:cardId', celebrate({
 cardRouter.post('/', celebrate({
   body: Joi.object().keys({
     name: Joi.string().required().min(2).max(30),
-    link: Joi.string().required(),
+    link: Joi.string().required().pattern(/(https?:\/\/)([w]{3}\.)?([\w-.~:/?#[\]@!$&'()*+,;=]{1,}\.[\w]{1,3})(\/[\w-.~:/?#[\]@!$&'()*+,;=]{1,})*/i),
   }),
 }), createCard);
 cardRouter.put('/:cardId/likes', celebrate({
