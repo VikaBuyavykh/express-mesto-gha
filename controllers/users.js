@@ -15,7 +15,14 @@ const createUser = async (req, res, next) => {
     const newUser = await new User({
       name, about, avatar, email, password: hash, _id,
     });
-    return res.status(201).send(await newUser.save());
+    await newUser.save();
+    return res.status(201).send({
+      name: newUser.name,
+      about: newUser.about,
+      avatar: newUser.avatar,
+      email: newUser.email,
+      _id: newUser._id,
+    });
   } catch (err) {
     if (err.code === 11000) {
       return next(new ConflictError('Такой пользователь уже существует'));
