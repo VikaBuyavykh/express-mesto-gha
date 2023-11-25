@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { default: isEmail } = require('validator/lib/isEmail');
+const regex = require('../utils/regex');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -19,7 +20,7 @@ const userSchema = new mongoose.Schema({
     default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
     validate: {
       validator(v) {
-        return /(https?:\/\/)([w]{3}\.)?([\w-.~:/?#[\]@!$&'()*+,;=]{1,}\.[\w]{1,3})(\/[\w-.~:/?#[\]@!$&'()*+,;=]{1,})*/i.test(v);
+        return regex.test(v);
       },
       message: (props) => `${props.value} is not a valid avatar`,
     },

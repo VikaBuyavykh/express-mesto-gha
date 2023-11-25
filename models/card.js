@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const regex = require('../utils/regex');
 
 const cardSchema = new mongoose.Schema({
   name: {
@@ -12,7 +13,7 @@ const cardSchema = new mongoose.Schema({
     required: true,
     validate: {
       validator(v) {
-        return /(https?:\/\/)([w]{3}\.)?([\w-.~:/?#[\]@!$&'()*+,;=]{1,}\.[\w]{1,3})(\/[\w-.~:/?#[\]@!$&'()*+,;=]{1,})*/i.test(v);
+        return regex.test(v);
       },
       message: (props) => `${props.value} is not a valid avatar`,
     },
