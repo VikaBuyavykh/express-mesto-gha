@@ -120,7 +120,7 @@ const login = async (req, res, next) => {
     const user = await User.findOne({ email }).select('+password').orFail(() => {
       throw new UnauthorizedError('Неправильные email или пароль');
     });
-    const matched = bcrypt.compare(String(password), user.password);
+    const matched = await bcrypt.compare(String(password), user.password);
     if (!matched) {
       throw new UnauthorizedError('Неправильные email или пароль');
     }
